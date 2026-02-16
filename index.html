@@ -1,389 +1,424 @@
-<!DOCTYPE html>
-<html>
-<head>
-	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-	<title></title>
-	<meta name="generator" content="LibreOffice 24.8.1.2 (Linux)"/>
-	<meta name="created" content="00:00:00"/>
-	<meta name="changed" content="00:00:00"/>
-	<style type="text/css">
-		@page { size: 8.27in 11.69in; margin: 0.79in }
-		p { line-height: 115%; margin-bottom: 0.1in; background: transparent }
-		pre { background: transparent }
-		pre.western { font-family: "Liberation Mono", monospace; font-size: 10pt }
-		pre.cjk { font-family: "NSimSun", monospace; font-size: 10pt }
-		pre.ctl { font-family: "Liberation Mono", monospace; font-size: 10pt }
-	</style>
-</head>
-<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre class="western">&lt;!DOCTYPE html&gt;
-&lt;html lang=&quot;es&quot;&gt;
-&lt;head&gt;
-    &lt;meta charset=&quot;UTF-8&quot;&gt;
-    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
-    &lt;title&gt;SECOP Cloud - Control de Supervisión&lt;/title&gt;
-    &lt;!-- Tailwind CSS para el diseño --&gt;
-    &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
-    &lt;!-- React y ReactDOM --&gt;
-    &lt;script src=&quot;https://unpkg.com/react@18/umd/react.production.min.js&quot;&gt;&lt;/script&gt;
-    &lt;script src=&quot;https://unpkg.com/react-dom@18/umd/react-dom.production.min.js&quot;&gt;&lt;/script&gt;
-    &lt;!-- Babel para JSX --&gt;
-    &lt;script src=&quot;https://unpkg.com/@babel/standalone/babel.min.js&quot;&gt;&lt;/script&gt;
-    
-    &lt;!-- Firebase SDK (Versiones Compat) --&gt;
-    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js&quot;&gt;&lt;/script&gt;
-    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js&quot;&gt;&lt;/script&gt;
-    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js&quot;&gt;&lt;/script&gt;
+import React, { useState, useMemo, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  onSnapshot, 
+  query 
+} from 'firebase/firestore';
+import { 
+  Users, Search, Download, ShieldCheck, Trash2, Edit2, 
+  FileUp, UserPlus, Settings, ArrowLeft, X, Clock, CheckCircle2, Save, LogOut, Lock, UserCircle
+} from 'lucide-react';
 
-    &lt;!-- Lucide Icons --&gt;
-    &lt;script src=&quot;https://unpkg.com/lucide@latest&quot;&gt;&lt;/script&gt;
-    &lt;style&gt;
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    &lt;/style&gt;
-&lt;/head&gt;
-&lt;body class=&quot;bg-slate-50&quot;&gt;
-    &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+// --- CONFIGURACIÓN DE FIREBASE ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'secop-control-v1';
 
-    &lt;script type=&quot;text/babel&quot;&gt;
-        // --- CONFIGURACIÓN DE FIREBASE ---
-        const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
-        const appId = window.__app_id || 'secop-bolivar-v1';
-        
-        // Inicialización única
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+// Configuración de accesos (En un entorno real, esto iría en base de datos)
+const ACCESS_CONFIG = {
+  supervisor: "sup123", // Contraseña ejemplo
+  financiera: "fin456"  // Contraseña ejemplo
+};
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null); // 'supervisor' o 'financiera'
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginForm, setLoginForm] = useState({ role: 'supervisor', password: '' });
+  const [loginError, setLoginError] = useState('');
+
+  const [masterInstructors, setMasterInstructors] = useState([]);
+  const [supervisionData, setSupervisionData] = useState({});
+  const [view, setView] = useState('dashboard'); 
+  const [filterText, setFilterText] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState(MONTHS[new Date().getMonth()]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [loading, setLoading] = useState(true);
+  
+  const [modals, setModals] = useState({ add: false, edit: false, bulk: false, hours: false });
+  const [formData, setFormData] = useState({ name: '', cc: '', contract: '' });
+  const [hoursPasteData, setHoursPasteData] = useState('');
+
+  // 1. Autenticación Firebase
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
-        
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+      } catch (err) {
+        console.error("Error de autenticación:", err);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
-        const { useState, useEffect, useMemo } = React;
+  // 2. Escuchar Firestore
+  useEffect(() => {
+    if (!user || !isLoggedIn) return;
 
-        // Componente de Iconos corregido para CDN
-        const Icon = ({ name, className }) =&gt; {
-            const ref = React.useRef(null);
-            useEffect(() =&gt; {
-                if (window.lucide &amp;&amp; ref.current) {
-                    ref.current.innerHTML = ''; // Limpiar previo
-                    const iconEl = document.createElement('i');
-                    iconEl.setAttribute('data-lucide', name.toLowerCase().replace(/([a-z0-9])([A-Z])/g, '$1-$2'));
-                    if (className) iconEl.className = className;
-                    ref.current.appendChild(iconEl);
-                    window.lucide.createIcons();
-                }
-            }, [name, className]);
-            return &lt;span ref={ref} className=&quot;inline-flex items-center justify-center&quot; /&gt;;
-        };
+    const qMaster = query(collection(db, 'artifacts', appId, 'public', 'data', 'instructors'));
+    const unsubMaster = onSnapshot(qMaster, (snapshot) => {
+      setMasterInstructors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setLoading(false);
+    }, () => setLoading(false));
 
-        const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const ACCESS_CONFIG = { supervisor: &quot;sup123&quot;, financiera: &quot;fin456&quot; };
+    const qSupervision = query(collection(db, 'artifacts', appId, 'public', 'data', 'supervision'));
+    const unsubSupervision = onSnapshot(qSupervision, (snapshot) => {
+      const data = {};
+      snapshot.docs.forEach(doc => { data[doc.id] = doc.data(); });
+      setSupervisionData(data);
+    });
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [role, setRole] = useState(null);
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const [loginForm, setLoginForm] = useState({ role: 'supervisor', password: '' });
-            const [loginError, setLoginError] = useState('');
-            const [loading, setLoading] = useState(false);
+    return () => { unsubMaster(); unsubSupervision(); };
+  }, [user, isLoggedIn]);
 
-            const [masterInstructors, setMasterInstructors] = useState([]);
-            const [supervisionData, setSupervisionData] = useState({});
-            const [view, setView] = useState('dashboard');
-            const [selectedMonth, setSelectedMonth] = useState(MONTHS[new Date().getMonth()]);
-            const [filterText, setFilterText] = useState('');
-            const [activeTab, setActiveTab] = useState('all');
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (ACCESS_CONFIG[loginForm.role] === loginForm.password) {
+      setRole(loginForm.role);
+      setIsLoggedIn(true);
+      setLoginError('');
+    } else {
+      setLoginError('Contraseña incorrecta para el rol seleccionado.');
+    }
+  };
 
-            // 1. Manejo de Autenticación (Regla 3: Auth antes de Queries)
-            useEffect(() =&gt; {
-                const initAuth = async () =&gt; {
-                    try {
-                        if (typeof window.__initial_auth_token !== 'undefined' &amp;&amp; window.__initial_auth_token) {
-                            await auth.signInWithCustomToken(window.__initial_auth_token);
-                        } else {
-                            await auth.signInAnonymously();
-                        }
-                    } catch (err) {
-                        console.error(&quot;Error en Autenticación:&quot;, err);
-                    }
-                };
+  const currentMonthInstructors = useMemo(() => {
+    return masterInstructors.map(master => {
+      const key = `${selectedMonth}-${master.cc}`;
+      const status = supervisionData[key] || { 
+        gcStatus: 'pending', gfStatus: 'pending', gcNotes: '', gfNotes: '', hours: 0 
+      };
+      return { ...master, ...status };
+    }).filter(inst => 
+      inst.name.toLowerCase().includes(filterText.toLowerCase()) || inst.cc.includes(filterText)
+    );
+  }, [masterInstructors, supervisionData, selectedMonth, filterText]);
 
-                initAuth();
-                const unsubscribe = auth.onAuthStateChanged((u) =&gt; {
-                    setUser(u);
-                });
-                return () =&gt; unsubscribe();
-            }, []);
+  const stats = useMemo(() => ({
+    total: currentMonthInstructors.length,
+    gcVerified: currentMonthInstructors.filter(i => i.gcStatus === 'verified').length,
+    gfVerified: currentMonthInstructors.filter(i => i.gfStatus === 'verified').length,
+    pending: currentMonthInstructors.filter(i => i.gcStatus === 'pending' || i.gfStatus === 'pending').length,
+  }), [currentMonthInstructors]);
 
-            // 2. Carga de datos (Solo si hay usuario autenticado Y login en UI)
-            useEffect(() =&gt; {
-                if (!user || !isLoggedIn) return;
-                
-                setLoading(true);
-                
-                // Ruta pública según Regla 1
-                const baseRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
-                
-                // Listener de Instructores
-                const unsubInst = baseRef.collection('instructors').onSnapshot((snap) =&gt; {
-                    setMasterInstructors(snap.docs.map(d =&gt; ({ id: d.id, ...d.data() })));
-                    setLoading(false);
-                }, (err) =&gt; {
-                    console.error(&quot;Error permisos instructores:&quot;, err);
-                    setLoading(false);
-                });
+  const saveInstructor = async (data) => {
+    if (!user || role !== 'supervisor') return;
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'instructors', data.cc), {
+        name: data.name, cc: data.cc, contract: data.contract, updatedAt: Date.now()
+      });
+    } catch (err) { console.error(err); }
+  };
 
-                // Listener de Supervisión
-                const unsubSup = baseRef.collection('supervision').onSnapshot((snap) =&gt; {
-                    const data = {};
-                    snap.docs.forEach(d =&gt; { data[d.id] = d.data(); });
-                    setSupervisionData(data);
-                }, (err) =&gt; {
-                    console.error(&quot;Error permisos supervisión:&quot;, err);
-                });
+  const updateStatus = async (cc, field, value) => {
+    if (!user) return;
+    // Solo supervisor edita GC, solo financiera edita GF
+    if (field === 'gcStatus' && role !== 'supervisor') return;
+    if (field === 'gfStatus' && role !== 'financiera') return;
 
-                return () =&gt; { 
-                    unsubInst(); 
-                    unsubSup(); 
-                };
-            }, [user, isLoggedIn]);
+    const key = `${selectedMonth}-${cc}`;
+    const current = supervisionData[key] || { gcStatus: 'pending', gfStatus: 'pending', gcNotes: '', gfNotes: '', hours: 0 };
+    try {
+      await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'supervision', key), {
+        ...current, [field]: value, lastModified: Date.now()
+      });
+    } catch (err) { console.error(err); }
+  };
 
-            const handleLogin = (e) =&gt; {
-                e.preventDefault();
-                if (ACCESS_CONFIG[loginForm.role] === loginForm.password) {
-                    setRole(loginForm.role);
-                    setIsLoggedIn(true);
-                    setLoginError('');
-                } else {
-                    setLoginError('Contraseña incorrecta');
-                }
-            };
+  const handleProcessHours = async () => {
+    if (!user || role !== 'supervisor') return;
+    const lines = hoursPasteData.split('\n');
+    const hoursMap = {}; 
 
-            const instructorsList = useMemo(() =&gt; {
-                return masterInstructors.map(m =&gt; {
-                    const key = `${selectedMonth}-${m.cc}`;
-                    return { ...m, ...(supervisionData[key] || { gcStatus: 'pending', gfStatus: 'pending', hours: 0 }) };
-                }).filter(i =&gt; 
-                    i.name.toLowerCase().includes(filterText.toLowerCase()) || 
-                    i.cc.includes(filterText)
-                );
-            }, [masterInstructors, supervisionData, selectedMonth, filterText]);
+    lines.forEach(line => {
+      const parts = line.split(line.includes('\t') ? '\t' : ',');
+      if (parts.length > 10) {
+        const cc = parts[5]?.trim(); 
+        const totalHours = parseFloat(parts[parts.length - 1]?.replace(',', '.'));
+        if (cc && !isNaN(totalHours)) hoursMap[cc] = (hoursMap[cc] || 0) + totalHours;
+      }
+    });
 
-            const updateStatus = async (cc, field, value) =&gt; {
-                if (!user) return;
-                const key = `${selectedMonth}-${cc}`;
-                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('supervision').doc(key);
-                
-                const current = supervisionData[key] || { gcStatus: 'pending', gfStatus: 'pending', hours: 0 };
-                try {
-                    await docRef.set({
-                        ...current,
-                        [field]: value,
-                        lastModified: Date.now()
-                    }, { merge: true });
-                } catch (err) {
-                    console.error(&quot;Error al guardar:&quot;, err);
-                }
-            };
+    for (const inst of masterInstructors) {
+      if (hoursMap[inst.cc] !== undefined) {
+        const key = `${selectedMonth}-${inst.cc}`;
+        const currentHours = hoursMap[inst.cc];
+        const isApproved = currentHours >= 160;
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'supervision', key), {
+          hours: currentHours,
+          gcStatus: isApproved ? 'verified' : 'pending',
+          gfStatus: 'pending',
+          gcNotes: isApproved ? `Auto-aprobado (${currentHours}h)` : `Registradas ${currentHours}h`,
+          gfNotes: '',
+          lastModified: Date.now()
+        });
+      }
+    }
+    setHoursPasteData('');
+    setModals(m => ({ ...m, hours: false }));
+  };
 
-            if (!isLoggedIn) {
-                return (
-                    &lt;div className=&quot;h-screen flex items-center justify-center bg-slate-900 px-4&quot;&gt;
-                        &lt;div className=&quot;bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md&quot;&gt;
-                            &lt;div className=&quot;text-center mb-6&quot;&gt;
-                                &lt;div className=&quot;bg-orange-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-white font-black text-xl shadow-lg shadow-orange-900/20&quot;&gt;S&lt;/div&gt;
-                                &lt;h2 className=&quot;text-2xl font-black uppercase tracking-tight&quot;&gt;Acceso SECOP&lt;/h2&gt;
-                                &lt;p className=&quot;text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest&quot;&gt;Regional Bolívar&lt;/p&gt;
-                            &lt;/div&gt;
-                            &lt;form onSubmit={handleLogin} className=&quot;space-y-4&quot;&gt;
-                                &lt;div className=&quot;grid grid-cols-2 gap-2&quot;&gt;
-                                    {['supervisor', 'financiera'].map(r =&gt; (
-                                        &lt;button 
-                                            key={r} 
-                                            type=&quot;button&quot; 
-                                            onClick={() =&gt; setLoginForm({...loginForm, role: r})} 
-                                            className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${loginForm.role === r ? 'bg-orange-600 text-white shadow-lg shadow-orange-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-                                        &gt;
-                                            {r}
-                                        &lt;/button&gt;
-                                    ))}
-                                &lt;/div&gt;
-                                &lt;div className=&quot;space-y-1&quot;&gt;
-                                    &lt;label className=&quot;text-[9px] font-black text-slate-400 uppercase ml-1&quot;&gt;Contraseña de acceso&lt;/label&gt;
-                                    &lt;input 
-                                        type=&quot;password&quot; 
-                                        placeholder=&quot;••••••••&quot; 
-                                        className=&quot;w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition-all&quot; 
-                                        value={loginForm.password} 
-                                        onChange={e =&gt; setLoginForm({...loginForm, password: e.target.value})} 
-                                    /&gt;
-                                &lt;/div&gt;
-                                {loginError &amp;&amp; &lt;p className=&quot;text-red-500 text-[10px] font-black uppercase text-center&quot;&gt;{loginError}&lt;/p&gt;}
-                                &lt;button type=&quot;submit&quot; className=&quot;w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-xs hover:bg-black transition-all shadow-xl&quot;&gt;Entrar al Sistema&lt;/button&gt;
-                            &lt;/form&gt;
-                        &lt;/div&gt;
-                    &lt;/div&gt;
-                );
-            }
+  // --- VISTA DE LOGIN ---
+  if (!isLoggedIn) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-900 px-4">
+        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
+          <div className="text-center mb-8">
+            <div className="bg-orange-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl shadow-orange-200">
+              <Lock className="text-white w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-black tracking-tight text-slate-900 uppercase">Acceso SECOP</h2>
+            <p className="text-slate-400 text-xs font-bold mt-1">SISTEMA REGIONAL BOLÍVAR</p>
+          </div>
+          
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Rol de Usuario</label>
+              <div className="grid grid-cols-2 gap-2">
+                {['supervisor', 'financiera'].map(r => (
+                  <button 
+                    key={r}
+                    type="button"
+                    onClick={() => setLoginForm({...loginForm, role: r})}
+                    className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${loginForm.role === r ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Contraseña</label>
+              <input 
+                type="password" 
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 font-mono transition-all"
+                placeholder="••••••••"
+                value={loginForm.password}
+                onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+              />
+            </div>
+            {loginError && <p className="text-[10px] text-red-500 font-black uppercase text-center">{loginError}</p>}
+            <button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white py-4 rounded-xl font-black uppercase text-xs shadow-xl transition-all">Ingresar al Sistema</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
-            return (
-                &lt;div className=&quot;min-h-screen&quot;&gt;
-                    &lt;header className=&quot;bg-white border-b sticky top-0 z-40 p-4 shadow-sm&quot;&gt;
-                        &lt;div className=&quot;max-w-7xl mx-auto flex justify-between items-center&quot;&gt;
-                            &lt;div className=&quot;flex items-center space-x-3&quot;&gt;
-                                &lt;div className=&quot;bg-orange-600 p-2 rounded-lg text-white font-black text-xs&quot;&gt;S&lt;/div&gt;
-                                &lt;div&gt;
-                                    &lt;span className=&quot;font-black text-sm uppercase block leading-none&quot;&gt;SECOP Cloud&lt;/span&gt;
-                                    &lt;span className=&quot;text-[9px] font-black text-blue-600 uppercase tracking-tighter&quot;&gt;Sesión: {role}&lt;/span&gt;
-                                &lt;/div&gt;
-                            &lt;/div&gt;
-                            &lt;div className=&quot;flex gap-2&quot;&gt;
-                                &lt;button 
-                                    onClick={() =&gt; setView(view === 'dashboard' ? 'master' : 'dashboard')} 
-                                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'dashboard' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
-                                &gt;
-                                    {view === 'dashboard' ? 'Base Maestra' : 'Tablero Control'}
-                                &lt;/button&gt;
-                                &lt;button onClick={() =&gt; setIsLoggedIn(false)} className=&quot;p-2 text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center&quot;&gt;
-                                    &lt;Icon name=&quot;LogOut&quot; className=&quot;w-5 h-5&quot; /&gt;
-                                &lt;/button&gt;
-                            &lt;/div&gt;
-                        &lt;/div&gt;
-                    &lt;/header&gt;
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-center italic font-black text-slate-400">CARGANDO NUBE...</div>
+    </div>
+  );
 
-                    &lt;main className=&quot;max-w-7xl mx-auto p-4 md:p-6&quot;&gt;
-                        {loading &amp;&amp; (
-                            &lt;div className=&quot;flex items-center justify-center p-12 text-[10px] font-black uppercase tracking-widest text-slate-400&quot;&gt;
-                                Cargando datos de la nube...
-                            &lt;/div&gt;
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="bg-orange-600 p-2 rounded-lg text-white"><ShieldCheck className="w-5 h-5" /></div>
+            <div>
+              <h1 className="text-md font-black tracking-tight leading-none uppercase">SECOP CLOUD</h1>
+              <span className="text-[9px] font-black text-blue-600 uppercase tracking-tighter">Sesión: {role}</span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            {role === 'supervisor' && view === 'dashboard' && (
+              <button onClick={() => setModals(m => ({ ...m, hours: true }))} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-black shadow-lg hover:bg-blue-700 transition-all">CRUCE HORAS</button>
+            )}
+            <button onClick={() => setIsLoggedIn(false)} className="p-2 text-slate-400 hover:text-red-500"><LogOut className="w-5 h-5" /></button>
+            <button 
+              onClick={() => setView(view === 'dashboard' ? 'management' : 'dashboard')} 
+              className={`px-4 py-2 rounded-lg text-xs font-black ${view === 'management' ? 'bg-slate-900 text-white' : 'bg-slate-100'}`}
+            >
+              {view === 'dashboard' ? 'MAESTRO' : 'TABLERO'}
+            </button>
+          </div>
+        </div>
+        {view === 'dashboard' && (
+          <div className="bg-slate-50 border-t border-slate-200 py-1.5 overflow-x-auto">
+            <div className="max-w-7xl mx-auto px-4 flex space-x-1">
+              {MONTHS.map(m => (
+                <button key={m} onClick={() => setSelectedMonth(m)} className={`px-4 py-1.5 rounded-md text-[9px] font-black uppercase ${selectedMonth === m ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-200'}`}>{m}</button>
+              ))}
+            </div>
+          </div>
+        )}
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {view === 'dashboard' ? (
+          <>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Total</p>
+                  <p className="text-2xl font-black">{stats.total}</p>
+                </div>
+                <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-2xl">
+                  <p className="text-[9px] font-black text-blue-600 uppercase mb-1">VB Supervisor</p>
+                  <p className="text-2xl font-black">{stats.gcVerified}</p>
+                </div>
+                <div className="bg-purple-50 border-l-4 border-purple-600 p-4 rounded-r-2xl">
+                  <p className="text-[9px] font-black text-purple-600 uppercase mb-1">Aprob. Fin</p>
+                  <p className="text-2xl font-black">{stats.gfVerified}</p>
+                </div>
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-2xl">
+                  <p className="text-[9px] font-black text-orange-500 uppercase mb-1">Pendientes</p>
+                  <p className="text-2xl font-black">{stats.pending}</p>
+                </div>
+             </div>
+
+             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/20">
+                  <div className="relative w-full max-w-xs">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type="text" placeholder="Buscar..." className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs" value={filterText} onChange={e => setFilterText(e.target.value)} />
+                  </div>
+                  <div className="flex bg-slate-100 p-1 rounded-lg">
+                    {['all', 'gc', 'gf'].map(t => (
+                      <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-1 text-[9px] font-black uppercase rounded-md ${activeTab === t ? 'bg-white shadow-sm' : 'text-slate-500'}`}>{t}</button>
+                    ))}
+                  </div>
+                </div>
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
+                    <tr>
+                      <th className="px-6 py-4">Instructor</th>
+                      <th className="px-6 py-4 text-center">Horas</th>
+                      {(activeTab === 'all' || activeTab === 'gc') && <th className="px-6 py-4">Supervisor</th>}
+                      {(activeTab === 'all' || activeTab === 'gf') && <th className="px-6 py-4">Financiera</th>}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {currentMonthInstructors.map(inst => (
+                      <tr key={inst.id} className="hover:bg-slate-50/50">
+                        <td className="px-6 py-4">
+                          <div className="font-bold">{inst.name}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">CC {inst.cc}</div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-2 py-1 rounded text-[10px] font-black ${inst.hours >= 160 ? 'bg-green-600 text-white' : 'bg-slate-100'}`}>{inst.hours}h</span>
+                        </td>
+                        {(activeTab === 'all' || activeTab === 'gc') && (
+                          <td className="px-6 py-4">
+                            <select 
+                              disabled={role !== 'supervisor'}
+                              value={inst.gcStatus} 
+                              onChange={e => updateStatus(inst.cc, 'gcStatus', e.target.value)}
+                              className={`w-full text-[10px] font-black p-2 rounded border border-slate-200 ${inst.gcStatus === 'verified' ? 'bg-blue-600 text-white' : 'bg-white'}`}
+                            >
+                              <option value="pending">PENDIENTE</option>
+                              <option value="verified">APROBADO</option>
+                              <option value="rejected">RECHAZADO</option>
+                            </select>
+                          </td>
                         )}
-                        
-                        {!loading &amp;&amp; view === 'dashboard' ? (
-                            &lt;&gt;
-                                &lt;div className=&quot;flex space-x-1 mb-6 overflow-x-auto pb-2 no-scrollbar&quot;&gt;
-                                    {MONTHS.map(m =&gt; (
-                                        &lt;button 
-                                            key={m} 
-                                            onClick={() =&gt; setSelectedMonth(m)} 
-                                            className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase whitespace-nowrap transition-all ${selectedMonth === m ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
-                                        &gt;
-                                            {m}
-                                        &lt;/button&gt;
-                                    ))}
-                                &lt;/div&gt;
-                                
-                                &lt;div className=&quot;bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden&quot;&gt;
-                                    &lt;div className=&quot;p-4 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-slate-50/30&quot;&gt;
-                                        &lt;input 
-                                            type=&quot;text&quot; 
-                                            placeholder=&quot;Buscar por nombre o CC...&quot; 
-                                            className=&quot;pl-4 pr-4 py-2 border border-slate-200 rounded-xl text-xs w-64 outline-none focus:ring-2 focus:ring-orange-500&quot; 
-                                            value={filterText} 
-                                            onChange={e =&gt; setFilterText(e.target.value)} 
-                                        /&gt;
-                                        &lt;div className=&quot;flex bg-slate-100 p-1 rounded-lg&quot;&gt;
-                                            {['all', 'gc', 'gf'].map(t =&gt; (
-                                                &lt;button 
-                                                    key={t} 
-                                                    onClick={() =&gt; setActiveTab(t)} 
-                                                    className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-md transition-all ${activeTab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-                                                &gt;
-                                                    {t === 'all' ? 'Ver Todos' : t === 'gc' ? 'Supervisor' : 'Financiera'}
-                                                &lt;/button&gt;
-                                            ))}
-                                        &lt;/div&gt;
-                                    &lt;/div&gt;
-
-                                    &lt;div className=&quot;overflow-x-auto&quot;&gt;
-                                        &lt;table className=&quot;w-full text-left&quot;&gt;
-                                            &lt;thead className=&quot;bg-slate-50 text-[10px] font-black uppercase text-slate-400&quot;&gt;
-                                                &lt;tr&gt;
-                                                    &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Instructor&lt;/th&gt;
-                                                    &lt;th className=&quot;p-4 border-b border-slate-100 text-center&quot;&gt;Horas&lt;/th&gt;
-                                                    {(activeTab === 'all' || activeTab === 'gc') &amp;&amp; &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Estado Supervisor&lt;/th&gt;}
-                                                    {(activeTab === 'all' || activeTab === 'gf') &amp;&amp; &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Estado Financiera&lt;/th&gt;}
-                                                &lt;/tr&gt;
-                                            &lt;/thead&gt;
-                                            &lt;tbody className=&quot;divide-y divide-slate-100&quot;&gt;
-                                                {instructorsList.length &gt; 0 ? instructorsList.map(i =&gt; (
-                                                    &lt;tr key={i.id} className=&quot;text-xs hover:bg-slate-50/50 transition-colors&quot;&gt;
-                                                        &lt;td className=&quot;p-4&quot;&gt;
-                                                            &lt;div className=&quot;font-bold text-slate-900&quot;&gt;{i.name}&lt;/div&gt;
-                                                            &lt;div className=&quot;text-[10px] text-slate-400 font-mono mt-0.5&quot;&gt;CC {i.cc}&lt;/div&gt;
-                                                        &lt;/td&gt;
-                                                        &lt;td className=&quot;p-4 text-center&quot;&gt;
-                                                            &lt;span className={`px-2.5 py-1 rounded-md font-black text-[10px] ${i.hours &gt;= 160 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}&gt;
-                                                                {i.hours}h
-                                                            &lt;/span&gt;
-                                                        &lt;/td&gt;
-                                                        {(activeTab === 'all' || activeTab === 'gc') &amp;&amp; (
-                                                            &lt;td className=&quot;p-4&quot;&gt;
-                                                                &lt;select 
-                                                                    disabled={role !== 'supervisor'} 
-                                                                    value={i.gcStatus} 
-                                                                    onChange={e =&gt; updateStatus(i.cc, 'gcStatus', e.target.value)} 
-                                                                    className={`w-full p-2.5 rounded-lg font-black text-[10px] uppercase border transition-all outline-none ${i.gcStatus === 'verified' ? 'bg-blue-600 text-white border-blue-700' : i.gcStatus === 'rejected' ? 'bg-red-500 text-white border-red-600' : 'bg-white border-slate-200 text-slate-400'}`}
-                                                                &gt;
-                                                                    &lt;option value=&quot;pending&quot;&gt;🟡 Pendiente&lt;/option&gt;
-                                                                    &lt;option value=&quot;verified&quot;&gt;✅ Aprobado&lt;/option&gt;
-                                                                    &lt;option value=&quot;rejected&quot;&gt;❌ Rechazado&lt;/option&gt;
-                                                                &lt;/select&gt;
-                                                            &lt;/td&gt;
-                                                        )}
-                                                        {(activeTab === 'all' || activeTab === 'gf') &amp;&amp; (
-                                                            &lt;td className=&quot;p-4&quot;&gt;
-                                                                &lt;select 
-                                                                    disabled={role !== 'financiera'} 
-                                                                    value={i.gfStatus} 
-                                                                    onChange={e =&gt; updateStatus(i.cc, 'gfStatus', e.target.value)} 
-                                                                    className={`w-full p-2.5 rounded-lg font-black text-[10px] uppercase border transition-all outline-none ${i.gfStatus === 'verified' ? 'bg-purple-600 text-white border-purple-700' : i.gfStatus === 'rejected' ? 'bg-red-500 text-white border-red-600' : 'bg-white border-slate-200 text-slate-400'}`}
-                                                                &gt;
-                                                                    &lt;option value=&quot;pending&quot;&gt;🟡 Pendiente&lt;/option&gt;
-                                                                    &lt;option value=&quot;verified&quot;&gt;✅ Aprobado&lt;/option&gt;
-                                                                    &lt;option value=&quot;rejected&quot;&gt;❌ Rechazado&lt;/option&gt;
-                                                                &lt;/select&gt;
-                                                            &lt;/td&gt;
-                                                        )}
-                                                    &lt;/tr&gt;
-                                                )) : (
-                                                    &lt;tr&gt;
-                                                        &lt;td colSpan=&quot;4&quot; className=&quot;p-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest italic&quot;&gt;
-                                                            No se encontraron instructores
-                                                        &lt;/td&gt;
-                                                    &lt;/tr&gt;
-                                                )}
-                                            &lt;/tbody&gt;
-                                        &lt;/table&gt;
-                                    &lt;/div&gt;
-                                &lt;/div&gt;
-                            &lt;/&gt;
-                        ) : !loading &amp;&amp; (
-                            &lt;div className=&quot;bg-white rounded-2xl border border-slate-200 p-6 shadow-sm&quot;&gt;
-                                &lt;div className=&quot;flex justify-between items-center mb-6&quot;&gt;
-                                    &lt;h2 className=&quot;font-black text-xl uppercase tracking-tight&quot;&gt;Base Maestra de Instructores&lt;/h2&gt;
-                                &lt;/div&gt;
-                                &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4&quot;&gt;
-                                    {masterInstructors.map(i =&gt; (
-                                        &lt;div key={i.id} className=&quot;p-4 border border-slate-100 rounded-2xl hover:border-orange-200 transition-all bg-slate-50/50&quot;&gt;
-                                            &lt;div className=&quot;font-black text-sm text-slate-900&quot;&gt;{i.name}&lt;/div&gt;
-                                            &lt;div className=&quot;flex justify-between items-center mt-2&quot;&gt;
-                                                &lt;span className=&quot;text-[10px] font-mono text-slate-400&quot;&gt;CC {i.cc}&lt;/span&gt;
-                                                &lt;span className=&quot;text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md&quot;&gt;{i.contract}&lt;/span&gt;
-                                            &lt;/div&gt;
-                                        &lt;/div&gt;
-                                    ))}
-                                &lt;/div&gt;
-                            &lt;/div&gt;
+                        {(activeTab === 'all' || activeTab === 'gf') && (
+                          <td className="px-6 py-4">
+                            <select 
+                              disabled={role !== 'financiera'}
+                              value={inst.gfStatus} 
+                              onChange={e => updateStatus(inst.cc, 'gfStatus', e.target.value)}
+                              className={`w-full text-[10px] font-black p-2 rounded border border-slate-200 ${inst.gfStatus === 'verified' ? 'bg-purple-600 text-white' : 'bg-white'}`}
+                            >
+                              <option value="pending">PENDIENTE</option>
+                              <option value="verified">APROBADO</option>
+                              <option value="rejected">RECHAZADO</option>
+                            </select>
+                          </td>
                         )}
-                    &lt;/main&gt;
-                &lt;/div&gt;
-            );
-        }
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+             </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-xl font-black">Instructores Maestros</h2>
+              {role === 'supervisor' && (
+                <button onClick={() => { setFormData({name:'',cc:'',contract:''}); setModals(m=>({...m,add:true})); }} className="bg-orange-600 text-white px-5 py-2 rounded-xl text-xs font-black shadow-lg shadow-orange-100">NUEVO</button>
+              )}
+            </div>
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase">
+                <tr><th className="px-6 py-4">Nombre</th><th className="px-6 py-4">CC</th><th className="px-6 py-4">Contrato</th><th className="px-6 py-4 text-center">Acciones</th></tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {masterInstructors.map(inst => (
+                  <tr key={inst.id}>
+                    <td className="px-6 py-4 text-sm font-bold">{inst.name}</td>
+                    <td className="px-6 py-4 text-sm font-mono text-slate-500">{inst.cc}</td>
+                    <td className="px-6 py-4 text-sm">{inst.contract}</td>
+                    <td className="px-6 py-4 text-center">
+                      {role === 'supervisor' && (
+                        <button onClick={() => { setFormData(inst); setModals(m=>({...m,edit:true})); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(&lt;App /&gt;);
-    &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;</pre>
-</body>
-</html>
+      {/* MODALES SIMPLIFICADOS */}
+      {(modals.add || modals.edit) && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="font-black mb-6 uppercase tracking-tight">Datos del Instructor</h3>
+            <div className="space-y-4">
+              <input placeholder="Nombre Completo" className="w-full p-3 bg-slate-50 border rounded-xl outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input placeholder="Cédula" className="w-full p-3 bg-slate-50 border rounded-xl outline-none" value={formData.cc} onChange={e => setFormData({...formData, cc: e.target.value})} />
+              <input placeholder="Contrato" className="w-full p-3 bg-slate-50 border rounded-xl outline-none" value={formData.contract} onChange={e => setFormData({...formData, contract: e.target.value})} />
+              <button onClick={() => { saveInstructor(formData); setModals(m=>({...m,add:false,edit:false})); }} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-xs">Guardar en la Nube</button>
+              <button onClick={() => setModals(m=>({...m,add:false,edit:false}))} className="w-full py-2 text-slate-400 text-xs font-black uppercase">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modals.hours && (
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-2xl p-6 shadow-2xl">
+            <h3 className="text-lg font-black uppercase tracking-tight mb-4 text-blue-600">Procesar Excel de Horas ({selectedMonth})</h3>
+            <textarea className="w-full h-80 p-4 bg-slate-50 border-2 border-dashed rounded-2xl text-[10px] font-mono mb-4" placeholder="Pega las filas del Excel aquí..." value={hoursPasteData} onChange={e => setHoursPasteData(e.target.value)} />
+            <div className="flex gap-3">
+              <button onClick={handleProcessHours} className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-black uppercase text-xs">Cruzar y Guardar</button>
+              <button onClick={() => setModals(m=>({...m,hours:false}))} className="px-6 text-slate-400 font-black uppercase text-xs">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
