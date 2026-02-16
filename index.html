@@ -1,393 +1,52 @@
 <!DOCTYPE html>
-<html lang="es">
-
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SECOP ***** - Control de Supervisión</title><!-- Tailwind CSS para el diseño -->
-    <script src="https://cdn.tailwindcss.com"></script><!-- React y ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script><!-- Babel para JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script><!-- Firebase SDK (Versiones Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script><!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-    </style>
-    <style>
-        *,
-        ::before,
-        ::after {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-gradient-from-position: ;
-            --tw-gradient-via-position: ;
-            --tw-gradient-to-position: ;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia: ;
-            --tw-contain-size: ;
-            --tw-contain-layout: ;
-            --tw-contain-paint: ;
-            --tw-contain-style:
-        }
-
-        ::backdrop {
-            --tw-border-spacing-x: 0;
-            --tw-border-spacing-y: 0;
-            --tw-translate-x: 0;
-            --tw-translate-y: 0;
-            --tw-rotate: 0;
-            --tw-skew-x: 0;
-            --tw-skew-y: 0;
-            --tw-scale-x: 1;
-            --tw-scale-y: 1;
-            --tw-pan-x: ;
-            --tw-pan-y: ;
-            --tw-pinch-zoom: ;
-            --tw-scroll-snap-strictness: proximity;
-            --tw-gradient-from-position: ;
-            --tw-gradient-via-position: ;
-            --tw-gradient-to-position: ;
-            --tw-ordinal: ;
-            --tw-slashed-zero: ;
-            --tw-numeric-figure: ;
-            --tw-numeric-spacing: ;
-            --tw-numeric-fraction: ;
-            --tw-ring-inset: ;
-            --tw-ring-offset-width: 0px;
-            --tw-ring-offset-color: #fff;
-            --tw-ring-color: rgb(59 130 246 / 0.5);
-            --tw-ring-offset-shadow: 0 0 #0000;
-            --tw-ring-shadow: 0 0 #0000;
-            --tw-shadow: 0 0 #0000;
-            --tw-shadow-colored: 0 0 #0000;
-            --tw-blur: ;
-            --tw-brightness: ;
-            --tw-contrast: ;
-            --tw-grayscale: ;
-            --tw-hue-rotate: ;
-            --tw-invert: ;
-            --tw-saturate: ;
-            --tw-sepia: ;
-            --tw-drop-shadow: ;
-            --tw-backdrop-blur: ;
-            --tw-backdrop-brightness: ;
-            --tw-backdrop-contrast: ;
-            --tw-backdrop-grayscale: ;
-            --tw-backdrop-hue-rotate: ;
-            --tw-backdrop-invert: ;
-            --tw-backdrop-opacity: ;
-            --tw-backdrop-saturate: ;
-            --tw-backdrop-sepia: ;
-            --tw-contain-size: ;
-            --tw-contain-layout: ;
-            --tw-contain-paint: ;
-            --tw-contain-style:
-        }
-
-        /* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */
-        *,
-        ::after,
-        ::before {
-            box-sizing: border-box;
-            border-width: 0;
-            border-style: solid;
-            border-color: #e5e7eb
-        }
-
-        ::after,
-        ::before {
-            --tw-content: ''
-        }
-
-        :host,
-        html {
-            line-height: 1.5;
-            -webkit-text-size-adjust: 100%;
-            -moz-tab-size: 4;
-            tab-size: 4;
-            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            font-feature-settings: normal;
-            font-variation-settings: normal;
-            -webkit-tap-highlight-color: transparent
-        }
-
-        body {
-            margin: 0;
-            line-height: inherit
-        }
-
-        hr {
-            height: 0;
-            color: inherit;
-            border-top-width: 1px
-        }
-
-        abbr:where([title]) {
-            -webkit-text-decoration: underline dotted;
-            text-decoration: underline dotted
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-size: inherit;
-            font-weight: inherit
-        }
-
-        a {
-            color: inherit;
-            text-decoration: inherit
-        }
-
-        b,
-        strong {
-            font-weight: bolder
-        }
-
-        code,
-        kbd,
-        pre,
-        samp {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-feature-settings: normal;
-            font-variation-settings: normal;
-            font-size: 1em
-        }
-
-        small {
-            font-size: 80%
-        }
-
-        sub,
-        sup {
-            font-size: 75%;
-            line-height: 0;
-            position: relative;
-            vertical-align: baseline
-        }
-
-        sub {
-            bottom: -.25em
-        }
-
-        sup {
-            top: -.5em
-        }
-
-        table {
-            text-indent: 0;
-            border-color: inherit;
-            border-collapse: collapse
-        }
-
-        button,
-        input,
-        optgroup,
-        select,
-        textarea {
-            font-family: inherit;
-            font-feature-settings: inherit;
-            font-variation-settings: inherit;
-            font-size: 100%;
-            font-weight: inherit;
-            line-height: inherit;
-            letter-spacing: inherit;
-            color: inherit;
-            margin: 0;
-            padding: 0
-        }
-
-        button,
-        select {
-            text-transform: none
-        }
-
-        button,
-        input:where([type=button]),
-        input:where([type=reset]),
-        input:where([type=submit]) {
-            -webkit-appearance: button;
-            background-color: transparent;
-            background-image: none
-        }
-
-        :-moz-focusring {
-            outline: auto
-        }
-
-        :-moz-ui-invalid {
-            box-shadow: none
-        }
-
-        progress {
-            vertical-align: baseline
-        }
-
-        ::-webkit-inner-spin-button,
-        ::-webkit-outer-spin-button {
-            height: auto
-        }
-
-        [type=search] {
-            -webkit-appearance: textfield;
-            outline-offset: -2px
-        }
-
-        ::-webkit-search-decoration {
-            -webkit-appearance: none
-        }
-
-        ::-webkit-file-upload-button {
-            -webkit-appearance: button;
-            font: inherit
-        }
-
-        summary {
-            display: list-item
-        }
-
-        blockquote,
-        dd,
-        dl,
-        figure,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6,
-        hr,
-        p,
-        pre {
-            margin: 0
-        }
-
-        fieldset {
-            margin: 0;
-            padding: 0
-        }
-
-        legend {
-            padding: 0
-        }
-
-        menu,
-        ol,
-        ul {
-            list-style: none;
-            margin: 0;
-            padding: 0
-        }
-
-        dialog {
-            padding: 0
-        }
-
-        textarea {
-            resize: vertical
-        }
-
-        input::placeholder,
-        textarea::placeholder {
-            opacity: 1;
-            color: #9ca3af
-        }
-
-        [role=button],
-        button {
-            cursor: pointer
-        }
-
-        :disabled {
-            cursor: default
-        }
-
-        audio,
-        canvas,
-        embed,
-        iframe,
-        img,
-        object,
-        svg,
-        video {
-            display: block;
-            vertical-align: middle
-        }
-
-        img,
-        video {
-            max-width: 100%;
-            height: auto
-        }
-
-        [hidden]:where(:not([hidden=until-found])) {
-            display: none
-        }
-
-        .bg-slate-50 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(248 250 252 / var(--tw-bg-opacity, 1))
-        }
-    </style>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 24.8.1.2 (Linux)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="00:00:00"/>
+	<style type="text/css">
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		p { line-height: 115%; margin-bottom: 0.1in; background: transparent }
+		pre { background: transparent }
+		pre.western { font-family: "Liberation Mono", monospace; font-size: 10pt }
+		pre.cjk { font-family: "NSimSun", monospace; font-size: 10pt }
+		pre.ctl { font-family: "Liberation Mono", monospace; font-size: 10pt }
+	</style>
 </head>
+<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre class="western">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;es&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+    &lt;title&gt;SECOP Cloud - Control de Supervisión&lt;/title&gt;
+    &lt;!-- Tailwind CSS para el diseño --&gt;
+    &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
+    &lt;!-- React y ReactDOM --&gt;
+    &lt;script src=&quot;https://unpkg.com/react@18/umd/react.production.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://unpkg.com/react-dom@18/umd/react-dom.production.min.js&quot;&gt;&lt;/script&gt;
+    &lt;!-- Babel para JSX --&gt;
+    &lt;script src=&quot;https://unpkg.com/@babel/standalone/babel.min.js&quot;&gt;&lt;/script&gt;
+    
+    &lt;!-- Firebase SDK (Versiones Compat) --&gt;
+    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js&quot;&gt;&lt;/script&gt;
 
-<body class="bg-slate-50">
-    <div id="root"><br></div>
-    <script type="text/babel"> // --- CONFIGURACIÓN DE FIREBASE ---
+    &lt;!-- Lucide Icons --&gt;
+    &lt;script src=&quot;https://unpkg.com/lucide@latest&quot;&gt;&lt;/script&gt;
+    &lt;style&gt;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;bg-slate-50&quot;&gt;
+    &lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+
+    &lt;script type=&quot;text/babel&quot;&gt;
+        // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = JSON.parse(window.__firebase_config || '{}');
         const appId = window.__app_id || 'secop-bolivar-v1';
         
@@ -402,10 +61,10 @@
         const { useState, useEffect, useMemo } = React;
 
         // Componente de Iconos corregido para CDN
-        const Icon = ({ name, className }) => {
+        const Icon = ({ name, className }) =&gt; {
             const ref = React.useRef(null);
-            useEffect(() => {
-                if (window.lucide && ref.current) {
+            useEffect(() =&gt; {
+                if (window.lucide &amp;&amp; ref.current) {
                     ref.current.innerHTML = ''; // Limpiar previo
                     const iconEl = document.createElement('i');
                     iconEl.setAttribute('data-lucide', name.toLowerCase().replace(/([a-z0-9])([A-Z])/g, '$1-$2'));
@@ -414,11 +73,11 @@
                     window.lucide.createIcons();
                 }
             }, [name, className]);
-            return <span ref={ref} className="inline-flex items-center justify-center" />;
+            return &lt;span ref={ref} className=&quot;inline-flex items-center justify-center&quot; /&gt;;
         };
 
         const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const ACCESS_CONFIG = { supervisor: "sup123", financiera: "fin456" };
+        const ACCESS_CONFIG = { supervisor: &quot;sup123&quot;, financiera: &quot;fin456&quot; };
 
         function App() {
             const [user, setUser] = useState(null);
@@ -436,28 +95,28 @@
             const [activeTab, setActiveTab] = useState('all');
 
             // 1. Manejo de Autenticación (Regla 3: Auth antes de Queries)
-            useEffect(() => {
-                const initAuth = async () => {
+            useEffect(() =&gt; {
+                const initAuth = async () =&gt; {
                     try {
-                        if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                        if (typeof window.__initial_auth_token !== 'undefined' &amp;&amp; window.__initial_auth_token) {
                             await auth.signInWithCustomToken(window.__initial_auth_token);
                         } else {
                             await auth.signInAnonymously();
                         }
                     } catch (err) {
-                        console.error("Error en Autenticación:", err);
+                        console.error(&quot;Error en Autenticación:&quot;, err);
                     }
                 };
 
                 initAuth();
-                const unsubscribe = auth.onAuthStateChanged((u) => {
+                const unsubscribe = auth.onAuthStateChanged((u) =&gt; {
                     setUser(u);
                 });
-                return () => unsubscribe();
+                return () =&gt; unsubscribe();
             }, []);
 
             // 2. Carga de datos (Solo si hay usuario autenticado Y login en UI)
-            useEffect(() => {
+            useEffect(() =&gt; {
                 if (!user || !isLoggedIn) return;
                 
                 setLoading(true);
@@ -466,30 +125,30 @@
                 const baseRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
                 
                 // Listener de Instructores
-                const unsubInst = baseRef.collection('instructors').onSnapshot((snap) => {
-                    setMasterInstructors(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                const unsubInst = baseRef.collection('instructors').onSnapshot((snap) =&gt; {
+                    setMasterInstructors(snap.docs.map(d =&gt; ({ id: d.id, ...d.data() })));
                     setLoading(false);
-                }, (err) => {
-                    console.error("Error permisos instructores:", err);
+                }, (err) =&gt; {
+                    console.error(&quot;Error permisos instructores:&quot;, err);
                     setLoading(false);
                 });
 
                 // Listener de Supervisión
-                const unsubSup = baseRef.collection('supervision').onSnapshot((snap) => {
+                const unsubSup = baseRef.collection('supervision').onSnapshot((snap) =&gt; {
                     const data = {};
-                    snap.docs.forEach(d => { data[d.id] = d.data(); });
+                    snap.docs.forEach(d =&gt; { data[d.id] = d.data(); });
                     setSupervisionData(data);
-                }, (err) => {
-                    console.error("Error permisos supervisión:", err);
+                }, (err) =&gt; {
+                    console.error(&quot;Error permisos supervisión:&quot;, err);
                 });
 
-                return () => { 
+                return () =&gt; { 
                     unsubInst(); 
                     unsubSup(); 
                 };
             }, [user, isLoggedIn]);
 
-            const handleLogin = (e) => {
+            const handleLogin = (e) =&gt; {
                 e.preventDefault();
                 if (ACCESS_CONFIG[loginForm.role] === loginForm.password) {
                     setRole(loginForm.role);
@@ -500,17 +159,17 @@
                 }
             };
 
-            const instructorsList = useMemo(() => {
-                return masterInstructors.map(m => {
+            const instructorsList = useMemo(() =&gt; {
+                return masterInstructors.map(m =&gt; {
                     const key = `${selectedMonth}-${m.cc}`;
                     return { ...m, ...(supervisionData[key] || { gcStatus: 'pending', gfStatus: 'pending', hours: 0 }) };
-                }).filter(i => 
+                }).filter(i =&gt; 
                     i.name.toLowerCase().includes(filterText.toLowerCase()) || 
                     i.cc.includes(filterText)
                 );
             }, [masterInstructors, supervisionData, selectedMonth, filterText]);
 
-            const updateStatus = async (cc, field, value) => {
+            const updateStatus = async (cc, field, value) =&gt; {
                 if (!user) return;
                 const key = `${selectedMonth}-${cc}`;
                 const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('supervision').doc(key);
@@ -523,209 +182,208 @@
                         lastModified: Date.now()
                     }, { merge: true });
                 } catch (err) {
-                    console.error("Error al guardar:", err);
+                    console.error(&quot;Error al guardar:&quot;, err);
                 }
             };
 
             if (!isLoggedIn) {
                 return (
-                    <div className="h-screen flex items-center justify-center bg-slate-900 px-4">
-                        <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
-                            <div className="text-center mb-6">
-                                <div className="bg-orange-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-white font-black text-xl shadow-lg shadow-orange-900/20">S</div>
-                                <h2 className="text-2xl font-black uppercase tracking-tight">Acceso SECOP</h2>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest">Regional Bolívar</p>
-                            </div>
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                <div className="grid grid-cols-2 gap-2">
-                                    {['supervisor', 'financiera'].map(r => (
-                                        <button 
+                    &lt;div className=&quot;h-screen flex items-center justify-center bg-slate-900 px-4&quot;&gt;
+                        &lt;div className=&quot;bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md&quot;&gt;
+                            &lt;div className=&quot;text-center mb-6&quot;&gt;
+                                &lt;div className=&quot;bg-orange-600 w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 text-white font-black text-xl shadow-lg shadow-orange-900/20&quot;&gt;S&lt;/div&gt;
+                                &lt;h2 className=&quot;text-2xl font-black uppercase tracking-tight&quot;&gt;Acceso SECOP&lt;/h2&gt;
+                                &lt;p className=&quot;text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-widest&quot;&gt;Regional Bolívar&lt;/p&gt;
+                            &lt;/div&gt;
+                            &lt;form onSubmit={handleLogin} className=&quot;space-y-4&quot;&gt;
+                                &lt;div className=&quot;grid grid-cols-2 gap-2&quot;&gt;
+                                    {['supervisor', 'financiera'].map(r =&gt; (
+                                        &lt;button 
                                             key={r} 
-                                            type="button" 
-                                            onClick={() => setLoginForm({...loginForm, role: r})} 
+                                            type=&quot;button&quot; 
+                                            onClick={() =&gt; setLoginForm({...loginForm, role: r})} 
                                             className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all ${loginForm.role === r ? 'bg-orange-600 text-white shadow-lg shadow-orange-200' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}
-                                        >
+                                        &gt;
                                             {r}
-                                        </button>
+                                        &lt;/button&gt;
                                     ))}
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Contraseña de acceso</label>
-                                    <input 
-                                        type="password" 
-                                        placeholder="••••••••" 
-                                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition-all" 
+                                &lt;/div&gt;
+                                &lt;div className=&quot;space-y-1&quot;&gt;
+                                    &lt;label className=&quot;text-[9px] font-black text-slate-400 uppercase ml-1&quot;&gt;Contraseña de acceso&lt;/label&gt;
+                                    &lt;input 
+                                        type=&quot;password&quot; 
+                                        placeholder=&quot;••••••••&quot; 
+                                        className=&quot;w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition-all&quot; 
                                         value={loginForm.password} 
-                                        onChange={e => setLoginForm({...loginForm, password: e.target.value})} 
-                                    />
-                                </div>
-                                {loginError && <p className="text-red-500 text-[10px] font-black uppercase text-center">{loginError}</p>}
-                                <button type="submit" className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-xs hover:bg-black transition-all shadow-xl">Entrar ** Sistema</button>
-                            </form>
-                        </div>
-                    </div>
+                                        onChange={e =&gt; setLoginForm({...loginForm, password: e.target.value})} 
+                                    /&gt;
+                                &lt;/div&gt;
+                                {loginError &amp;&amp; &lt;p className=&quot;text-red-500 text-[10px] font-black uppercase text-center&quot;&gt;{loginError}&lt;/p&gt;}
+                                &lt;button type=&quot;submit&quot; className=&quot;w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-xs hover:bg-black transition-all shadow-xl&quot;&gt;Entrar al Sistema&lt;/button&gt;
+                            &lt;/form&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
                 );
             }
 
             return (
-                <div className="min-h-screen">
-                    <header className="bg-white border-b sticky top-0 z-40 p-4 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                                <div className="bg-orange-600 p-2 rounded-lg text-white font-black text-xs">S</div>
-                                <div>
-                                    <span className="font-black text-sm uppercase block leading-none">SECOP Cloud</span>
-                                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-tighter">Sesión: {role}</span>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setView(view === 'dashboard' ? 'master' : 'dashboard')} 
+                &lt;div className=&quot;min-h-screen&quot;&gt;
+                    &lt;header className=&quot;bg-white border-b sticky top-0 z-40 p-4 shadow-sm&quot;&gt;
+                        &lt;div className=&quot;max-w-7xl mx-auto flex justify-between items-center&quot;&gt;
+                            &lt;div className=&quot;flex items-center space-x-3&quot;&gt;
+                                &lt;div className=&quot;bg-orange-600 p-2 rounded-lg text-white font-black text-xs&quot;&gt;S&lt;/div&gt;
+                                &lt;div&gt;
+                                    &lt;span className=&quot;font-black text-sm uppercase block leading-none&quot;&gt;SECOP Cloud&lt;/span&gt;
+                                    &lt;span className=&quot;text-[9px] font-black text-blue-600 uppercase tracking-tighter&quot;&gt;Sesión: {role}&lt;/span&gt;
+                                &lt;/div&gt;
+                            &lt;/div&gt;
+                            &lt;div className=&quot;flex gap-2&quot;&gt;
+                                &lt;button 
+                                    onClick={() =&gt; setView(view === 'dashboard' ? 'master' : 'dashboard')} 
                                     className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all ${view === 'dashboard' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'}`}
-                                >
+                                &gt;
                                     {view === 'dashboard' ? 'Base Maestra' : 'Tablero Control'}
-                                </button>
-                                <button onClick={() => setIsLoggedIn(false)} className="p-2 text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center">
-                                    <Icon name="LogOut" className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    </header>
+                                &lt;/button&gt;
+                                &lt;button onClick={() =&gt; setIsLoggedIn(false)} className=&quot;p-2 text-slate-300 hover:text-red-500 transition-colors flex items-center justify-center&quot;&gt;
+                                    &lt;Icon name=&quot;LogOut&quot; className=&quot;w-5 h-5&quot; /&gt;
+                                &lt;/button&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    &lt;/header&gt;
 
-                    <main className="max-w-7xl mx-auto p-4 md:p-6">
-                        {loading && (
-                            <div className="flex items-center justify-center p-12 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    &lt;main className=&quot;max-w-7xl mx-auto p-4 md:p-6&quot;&gt;
+                        {loading &amp;&amp; (
+                            &lt;div className=&quot;flex items-center justify-center p-12 text-[10px] font-black uppercase tracking-widest text-slate-400&quot;&gt;
                                 Cargando datos de la nube...
-                            </div>
+                            &lt;/div&gt;
                         )}
                         
-                        {!loading && view === 'dashboard' ? (
-                            <>
-                                <div className="flex space-x-1 mb-6 overflow-x-auto pb-2 no-scrollbar">
-                                    {MONTHS.map(m => (
-                                        <button 
+                        {!loading &amp;&amp; view === 'dashboard' ? (
+                            &lt;&gt;
+                                &lt;div className=&quot;flex space-x-1 mb-6 overflow-x-auto pb-2 no-scrollbar&quot;&gt;
+                                    {MONTHS.map(m =&gt; (
+                                        &lt;button 
                                             key={m} 
-                                            onClick={() => setSelectedMonth(m)} 
+                                            onClick={() =&gt; setSelectedMonth(m)} 
                                             className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase whitespace-nowrap transition-all ${selectedMonth === m ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}
-                                        >
+                                        &gt;
                                             {m}
-                                        </button>
+                                        &lt;/button&gt;
                                     ))}
-                                </div>
+                                &lt;/div&gt;
                                 
-                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                                    <div className="p-4 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-slate-50/30">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Buscar por nombre o CC..." 
-                                            className="pl-4 pr-4 py-2 border border-slate-200 rounded-xl text-xs w-64 outline-none focus:ring-2 focus:ring-orange-500" 
+                                &lt;div className=&quot;bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden&quot;&gt;
+                                    &lt;div className=&quot;p-4 border-b border-slate-100 flex flex-wrap gap-4 items-center justify-between bg-slate-50/30&quot;&gt;
+                                        &lt;input 
+                                            type=&quot;text&quot; 
+                                            placeholder=&quot;Buscar por nombre o CC...&quot; 
+                                            className=&quot;pl-4 pr-4 py-2 border border-slate-200 rounded-xl text-xs w-64 outline-none focus:ring-2 focus:ring-orange-500&quot; 
                                             value={filterText} 
-                                            onChange={e => setFilterText(e.target.value)} 
-                                        />
-                                        <div className="flex bg-slate-100 p-1 rounded-lg">
-                                            {['all', 'gc', 'gf'].map(t => (
-                                                <button 
+                                            onChange={e =&gt; setFilterText(e.target.value)} 
+                                        /&gt;
+                                        &lt;div className=&quot;flex bg-slate-100 p-1 rounded-lg&quot;&gt;
+                                            {['all', 'gc', 'gf'].map(t =&gt; (
+                                                &lt;button 
                                                     key={t} 
-                                                    onClick={() => setActiveTab(t)} 
+                                                    onClick={() =&gt; setActiveTab(t)} 
                                                     className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-md transition-all ${activeTab === t ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-                                                >
+                                                &gt;
                                                     {t === 'all' ? 'Ver Todos' : t === 'gc' ? 'Supervisor' : 'Financiera'}
-                                                </button>
+                                                &lt;/button&gt;
                                             ))}
-                                        </div>
-                                    </div>
+                                        &lt;/div&gt;
+                                    &lt;/div&gt;
 
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-slate-50 text-[10px] font-black uppercase text-slate-400">
-                                                <tr>
-                                                    <th className="p-4 border-b border-slate-100">Instructor</th>
-                                                    <th className="p-4 border-b border-slate-100 text-center">Horas</th>
-                                                    {(activeTab === 'all' || activeTab === 'gc') && <th className="p-4 border-b border-slate-100">Estado Supervisor</th>}
-                                                    {(activeTab === 'all' || activeTab === 'gf') && <th className="p-4 border-b border-slate-100">Estado Financiera</th>}
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100">
-                                                {instructorsList.length > 0 ? instructorsList.map(i => (
-                                                    <tr key={i.id} className="text-xs hover:bg-slate-50/50 transition-colors">
-                                                        <td className="p-4">
-                                                            <div className="font-bold text-slate-900">{i.name}</div>
-                                                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">CC {i.cc}</div>
-                                                        </td>
-                                                        <td className="p-4 text-center">
-                                                            <span className={`px-2.5 py-1 rounded-md font-black text-[10px] ${i.hours >= 160 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                                    &lt;div className=&quot;overflow-x-auto&quot;&gt;
+                                        &lt;table className=&quot;w-full text-left&quot;&gt;
+                                            &lt;thead className=&quot;bg-slate-50 text-[10px] font-black uppercase text-slate-400&quot;&gt;
+                                                &lt;tr&gt;
+                                                    &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Instructor&lt;/th&gt;
+                                                    &lt;th className=&quot;p-4 border-b border-slate-100 text-center&quot;&gt;Horas&lt;/th&gt;
+                                                    {(activeTab === 'all' || activeTab === 'gc') &amp;&amp; &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Estado Supervisor&lt;/th&gt;}
+                                                    {(activeTab === 'all' || activeTab === 'gf') &amp;&amp; &lt;th className=&quot;p-4 border-b border-slate-100&quot;&gt;Estado Financiera&lt;/th&gt;}
+                                                &lt;/tr&gt;
+                                            &lt;/thead&gt;
+                                            &lt;tbody className=&quot;divide-y divide-slate-100&quot;&gt;
+                                                {instructorsList.length &gt; 0 ? instructorsList.map(i =&gt; (
+                                                    &lt;tr key={i.id} className=&quot;text-xs hover:bg-slate-50/50 transition-colors&quot;&gt;
+                                                        &lt;td className=&quot;p-4&quot;&gt;
+                                                            &lt;div className=&quot;font-bold text-slate-900&quot;&gt;{i.name}&lt;/div&gt;
+                                                            &lt;div className=&quot;text-[10px] text-slate-400 font-mono mt-0.5&quot;&gt;CC {i.cc}&lt;/div&gt;
+                                                        &lt;/td&gt;
+                                                        &lt;td className=&quot;p-4 text-center&quot;&gt;
+                                                            &lt;span className={`px-2.5 py-1 rounded-md font-black text-[10px] ${i.hours &gt;= 160 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}&gt;
                                                                 {i.hours}h
-                                                            </span>
-                                                        </td>
-                                                        {(activeTab === 'all' || activeTab === 'gc') && (
-                                                            <td className="p-4">
-                                                                <select 
+                                                            &lt;/span&gt;
+                                                        &lt;/td&gt;
+                                                        {(activeTab === 'all' || activeTab === 'gc') &amp;&amp; (
+                                                            &lt;td className=&quot;p-4&quot;&gt;
+                                                                &lt;select 
                                                                     disabled={role !== 'supervisor'} 
                                                                     value={i.gcStatus} 
-                                                                    onChange={e => updateStatus(i.cc, 'gcStatus', e.target.value)} 
+                                                                    onChange={e =&gt; updateStatus(i.cc, 'gcStatus', e.target.value)} 
                                                                     className={`w-full p-2.5 rounded-lg font-black text-[10px] uppercase border transition-all outline-none ${i.gcStatus === 'verified' ? 'bg-blue-600 text-white border-blue-700' : i.gcStatus === 'rejected' ? 'bg-red-500 text-white border-red-600' : 'bg-white border-slate-200 text-slate-400'}`}
-                                                                >
-                                                                    <option value="pending">🟡 Pendiente</option>
-                                                                    <option value="verified">✅ Aprobado</option>
-                                                                    <option value="rejected">❌ Rechazado</option>
-                                                                </select>
-                                                            </td>
+                                                                &gt;
+                                                                    &lt;option value=&quot;pending&quot;&gt;🟡 Pendiente&lt;/option&gt;
+                                                                    &lt;option value=&quot;verified&quot;&gt;✅ Aprobado&lt;/option&gt;
+                                                                    &lt;option value=&quot;rejected&quot;&gt;❌ Rechazado&lt;/option&gt;
+                                                                &lt;/select&gt;
+                                                            &lt;/td&gt;
                                                         )}
-                                                        {(activeTab === 'all' || activeTab === 'gf') && (
-                                                            <td className="p-4">
-                                                                <select 
+                                                        {(activeTab === 'all' || activeTab === 'gf') &amp;&amp; (
+                                                            &lt;td className=&quot;p-4&quot;&gt;
+                                                                &lt;select 
                                                                     disabled={role !== 'financiera'} 
                                                                     value={i.gfStatus} 
-                                                                    onChange={e => updateStatus(i.cc, 'gfStatus', e.target.value)} 
+                                                                    onChange={e =&gt; updateStatus(i.cc, 'gfStatus', e.target.value)} 
                                                                     className={`w-full p-2.5 rounded-lg font-black text-[10px] uppercase border transition-all outline-none ${i.gfStatus === 'verified' ? 'bg-purple-600 text-white border-purple-700' : i.gfStatus === 'rejected' ? 'bg-red-500 text-white border-red-600' : 'bg-white border-slate-200 text-slate-400'}`}
-                                                                >
-                                                                    <option value="pending">🟡 Pendiente</option>
-                                                                    <option value="verified">✅ Aprobado</option>
-                                                                    <option value="rejected">❌ Rechazado</option>
-                                                                </select>
-                                                            </td>
+                                                                &gt;
+                                                                    &lt;option value=&quot;pending&quot;&gt;🟡 Pendiente&lt;/option&gt;
+                                                                    &lt;option value=&quot;verified&quot;&gt;✅ Aprobado&lt;/option&gt;
+                                                                    &lt;option value=&quot;rejected&quot;&gt;❌ Rechazado&lt;/option&gt;
+                                                                &lt;/select&gt;
+                                                            &lt;/td&gt;
                                                         )}
-                                                    </tr>
+                                                    &lt;/tr&gt;
                                                 )) : (
-                                                    <tr>
-                                                        <td colSpan="4" className="p-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest italic">
+                                                    &lt;tr&gt;
+                                                        &lt;td colSpan=&quot;4&quot; className=&quot;p-12 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest italic&quot;&gt;
                                                             No se encontraron instructores
-                                                        </td>
-                                                    </tr>
+                                                        &lt;/td&gt;
+                                                    &lt;/tr&gt;
                                                 )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </>
-                        ) : !loading && (
-                            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h2 className="font-black text-xl uppercase tracking-tight">Base ******* de Instructores</h2>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {masterInstructors.map(i => (
-                                        <div key={i.id} className="p-4 border border-slate-100 rounded-2xl hover:border-orange-200 transition-all bg-slate-50/50">
-                                            <div className="font-black text-sm text-slate-900">{i.name}</div>
-                                            <div className="flex justify-between items-center mt-2">
-                                                <span className="text-[10px] font-mono text-slate-400">CC {i.cc}</span>
-                                                <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md">{i.contract}</span>
-                                            </div>
-                                        </div>
+                                            &lt;/tbody&gt;
+                                        &lt;/table&gt;
+                                    &lt;/div&gt;
+                                &lt;/div&gt;
+                            &lt;/&gt;
+                        ) : !loading &amp;&amp; (
+                            &lt;div className=&quot;bg-white rounded-2xl border border-slate-200 p-6 shadow-sm&quot;&gt;
+                                &lt;div className=&quot;flex justify-between items-center mb-6&quot;&gt;
+                                    &lt;h2 className=&quot;font-black text-xl uppercase tracking-tight&quot;&gt;Base Maestra de Instructores&lt;/h2&gt;
+                                &lt;/div&gt;
+                                &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4&quot;&gt;
+                                    {masterInstructors.map(i =&gt; (
+                                        &lt;div key={i.id} className=&quot;p-4 border border-slate-100 rounded-2xl hover:border-orange-200 transition-all bg-slate-50/50&quot;&gt;
+                                            &lt;div className=&quot;font-black text-sm text-slate-900&quot;&gt;{i.name}&lt;/div&gt;
+                                            &lt;div className=&quot;flex justify-between items-center mt-2&quot;&gt;
+                                                &lt;span className=&quot;text-[10px] font-mono text-slate-400&quot;&gt;CC {i.cc}&lt;/span&gt;
+                                                &lt;span className=&quot;text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded-md&quot;&gt;{i.contract}&lt;/span&gt;
+                                            &lt;/div&gt;
+                                        &lt;/div&gt;
                                     ))}
-                                </div>
-                            </div>
+                                &lt;/div&gt;
+                            &lt;/div&gt;
                         )}
-                    </main>
-                </div>
+                    &lt;/main&gt;
+                &lt;/div&gt;
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-
-<div style="color: red">Prueba de Word a HTML - por favor <a href="https://wordtohtml.net/site/payment">Go PRO</a> para obtener el HTML completo.</div>
+        root.render(&lt;App /&gt;);
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
 </body>
-
 </html>
